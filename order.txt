@@ -1,0 +1,12 @@
+Nome do cliente: Mar
+Resumo do Pedido:
+--------------------------------
+Nome       Qtd     Vl Unt.
+Frango     1x     R$ 19,00
+Grelhado
+---        ---         ---
+Total      ---    R$ 19,00
+
+
+
+
