@@ -2,6 +2,7 @@ import os
 import win32print
 
 def send_to_printer():
+    
     if not os.name == "nt":
         print('here')
         raise Exception("Impressão ainda não suportada no Linux")

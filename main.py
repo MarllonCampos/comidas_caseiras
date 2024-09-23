@@ -1,13 +1,12 @@
 import inquirer, csv
 import locale, pyperclip
-from tabulate import tabulate, SEPARATING_LINE
+from tabulate import tabulate
 from typing import Dict, List
 from enum import Enum
 from inquirer import errors
 from inquirer.themes import BlueComposure,GreenPassion
 from util import clear_terminal, break_text_lines
 from printer import send_to_printer
-from os import getcwd
 
 class Menus(Enum):
     CLASSIC = "Clássico"
@@ -17,7 +16,6 @@ class Menus(Enum):
 class Application:
     DEFAULT_CLASSIC_MENU_PATH = 'src/cardapios/classic.csv'
     DEFAULT_SPECIAL_MENU_PATH = 'src/cardapios/special.csv'
-    print(getcwd())
     def __init__(self):
         locale.setlocale(locale.LC_ALL, '')
         self.requests: List(Dict[str, str | int]) = []
@@ -204,8 +202,8 @@ class Application:
         pyperclip.copy(self.whatsapp_order)   
         printer_file = open("./order.txt","w", encoding="utf8")
         printer_file.write(self.printer_order)
-        send_to_printer() # CALLS UTILS FILE TO PRINT ORDER
         printer_file.close()
+        send_to_printer() # CALLS UTILS FILE TO PRINT ORDER
 
     
     def show_order_overview(self):
@@ -238,7 +236,6 @@ class Application:
                     clear_terminal()
                 self.clear_fields()
                 
-
             except Exception as error:
                 print(error)
                 question = [
@@ -251,7 +248,6 @@ class Application:
                 else:
                     break
 
-
     # PRIVATE METHODS
 
     def __validate_name(self, _, current):
@@ -260,7 +256,7 @@ class Application:
                 "",
                 reason=f"Nome não pode ser vazio ou ter menos de 3 letras{current}")
         return True
-     
+
 if __name__ == "__main__":
     clear_terminal()
     app = Application()
