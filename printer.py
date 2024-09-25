@@ -22,8 +22,8 @@ def send_to_printer():
         
         win32print.StartDocPrinter(hprinter, 1, ("Print Job", None, "RAW"))
         win32print.StartPagePrinter(hprinter)
-
-        win32print.WritePrinter(hprinter, content.encode('utf-8'))
+            
+        win32print.WritePrinter(hprinter, content)
 
         win32print.EndPagePrinter(hprinter)
         win32print.EndDocPrinter(hprinter)
