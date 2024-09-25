@@ -152,18 +152,15 @@ class Application:
                 if not plate_found:
                     self.requests.append(request_object)
             should_continue_adding_plates = answers['continue']
-      
 
-    
-
-    def __format_obs(self,obs,table="whats") -> str:
+    def __format_obs(self,obs) -> str:
+        """Format the observation string putting breaklines on the correct spots"""
         if len(obs) == 0:
             return ''
-        if(table == "whats"):
-            return f' (Obs {obs})'
         return f'\n(Obs {break_text_lines(obs,10)})'
 
     def prepare_order(self):
+        """Prepare the order for whatsapp and printer"""
         order = f"Nome do cliente: *{self.client_name}*\nResumo do Pedido:\n{"-"*32}\n"
         whatsapp_tabulate_data = []
         printer_tabulate_data = []
@@ -173,8 +170,10 @@ class Application:
         for request in self.requests:
             name = request.get("name").strip()
             obs = request.get("obs").strip()
-            whatsapp_formatted_name = f"{name:<12}{self.__format_obs(obs=obs)}"
-            printer_formatted_name = f"{name:<12}{self.__format_obs(obs=obs, table='printer')}"
+            whatsapp_formatted_name = f"{name}{self.__format_obs(obs)}"
+            whatsapp_formatted_name = break_text_lines(whatsapp_formatted_name, 10)
+            printer_formatted_name = f"{name:<12}{self.__format_obs(obs)}"
+
             printer_formatted_name = break_text_lines(printer_formatted_name, 13)
             value = locale.currency(request.get("value"))
             quantity = f'{request.get("quantity")}x'
@@ -187,7 +186,7 @@ class Application:
         printer_tabulate_data.append(['-'*3,'-'*3,'-'*3])
         whatsapp_tabulate_data.append(["Total","-"*5,value_brl])
         printer_tabulate_data.append(["Total","---",value_brl])
-        whatsapp_table = tabulate(whatsapp_tabulate_data,headers=['Nome','Qtd','Vl Unt.'], colalign=('left', 'center','right'), tablefmt="rounded_outline",)
+        whatsapp_table = tabulate(whatsapp_tabulate_data,headers=['Nome','Qtd','Vl Unt.'], colalign=('left', 'center','right'), tablefmt="grid",)
         printer_table = tabulate(printer_tabulate_data,headers=['Nome','Qtd','Vl Unt.'], colalign=('left', 'center','right'), tablefmt="plain")
         whatsapp_order+=f"{whatsapp_table}\n"
         printer_order+=f"{printer_table}\n"
@@ -196,7 +195,6 @@ class Application:
         self.whatsapp_order = whatsapp_order
         self.printer_order = f"{printer_order}\n\n\n\n"
         self.order = whatsapp_order.replace('`','')
-     
     
     def print_and_copy_to_clipboard(self):
         pyperclip.copy(self.whatsapp_order)   

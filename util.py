@@ -9,14 +9,19 @@ def clear_terminal():
 
 
 def break_text_lines(text, size=15):
-    # Usar regex para quebrar texto em linhas sem cortar palavras
     words = text.split()
     lines = []
     current_line = ""
 
     for word in words:
+        # Quebra a palavra se ela for muito longa
+        while len(word) > size:
+            # Adiciona a parte da palavra que cabe na linha atual
+            lines.append(word[:size])
+            word = word[size:]  # Remove a parte já adicionada
+
         # Se a adição da próxima palavra exceder o tamanho, adicionar a linha atual à lista
-        if len(current_line) + len(word) + 1 > size:
+        if len(current_line) + len(word) + (1 if current_line else 0) > size:
             lines.append(current_line)
             current_line = word  # Começar uma nova linha com a palavra atual
         else:
