@@ -1,12 +1,9 @@
 # -*- mode: python ; coding: utf-8 -*-
 from PyInstaller.utils.hooks import copy_metadata
 import shutil
-import os
 
 datas = []
 datas += copy_metadata('readchar')
-
-
 
 a = Analysis(
     ['main.py'],
