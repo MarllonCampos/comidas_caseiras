@@ -7,8 +7,9 @@ from inquirer import errors
 from inquirer.themes import BlueComposure,GreenPassion
 from util import clear_terminal, break_text_lines
 from printer import send_to_printer
+from menus import Menus
 
-class Menus(Enum):
+class Menus_Type(Enum):
     CLASSIC = "Clássico"
     SPECIAL = "Especial"
     NOT_SELECTED = None
@@ -20,19 +21,32 @@ class Application:
         locale.setlocale(locale.LC_ALL, '')
         self.requests: List(Dict[str, str | int]) = []
         self.client_name: str = ""
-        self.selected_menu: Menus = Menus.CLASSIC 
+        self.selected_menu: Menus_Type = Menus_Type.CLASSIC 
         self.menu: List(Dict[str, str]) = {}
+        self.menus: Menus = Menus()
         self.should_ask_for_different_menus = True
         self.order = ""
+        self.delivery_fee = 0
         self.whatsapp_order = ""
         self.printer_order = ""
 
 
     def show_menus(self):
-        if self.selected_menu == Menus.CLASSIC.value:
-            self.show_classic_menu()
-        elif self.selected_menu == Menus.SPECIAL.value:
-            self.show_special_menu()
+        tabulate_data = []
+        self.menu = self.menus.menu_object.get(self.selected_menu)
+        
+        for plate_key_name in self.menu:
+            plate_value_brl = locale.currency(self.menu.get(plate_key_name).get("value"))
+            plate_name = self.menu.get(plate_key_name).get("name")
+            tabulate_data.append((plate_name,plate_value_brl))
+        menu = tabulate(
+            tabulate_data,
+            headers=["Nome", "Valor"],
+            tablefmt="pretty",
+            colalign=("left","right")
+        )
+        print(menu)
+
         
     def show_classic_menu(self) -> str:
         classic_csv_file = open(Application.DEFAULT_CLASSIC_MENU_PATH, "r", encoding="utf8")
@@ -92,9 +106,9 @@ class Application:
         self.client_name = answer.get('name')
 
     def menu_question(self):
-        menus_choices = [menu.value for menu in Menus if menu != Menus.NOT_SELECTED]
+        menus_choices = [menu_name for menu_name in self.menus.menu_object]
         question = [
-            inquirer.List('menu',message='Qual menu deseja comprar', choices=menus_choices,default=Menus.CLASSIC)
+            inquirer.List('menu',message='Qual menu deseja comprar', choices=menus_choices)
         ]
         answer=inquirer.prompt(question, theme=GreenPassion())
         self.selected_menu = answer.get('menu')
@@ -103,12 +117,13 @@ class Application:
 
     def clear_fields(self):
         self.client_name = ""
-        self.selected_menu = Menus.NOT_SELECTED
+        self.selected_menu = Menus_Type.NOT_SELECTED
         self.requests = []
         self.whatsapp_order = ""
         self.printer_order = ""
         self.order = ""
         self.menu = {}
+        self.delivery_fee = 0
 
 
     def plate_and_quantity_questions(self):
@@ -123,7 +138,7 @@ class Application:
                 inquirer.List('plate',message='Escolha um prato', choices=choices, carousel=True),
                 inquirer.List('quantity', message="Qual a quantidade", choices=quantity_range, carousel=True),
                 inquirer.Text('obs',message="Obs?"),
-                inquirer.Confirm('continue',message="Deseja incluir mais pratos?", default=False)
+                inquirer.Confirm('continue',message="Deseja incluir mais itens deste cardápio?", default=False)
             ]
             answers = inquirer.prompt(questions,theme=BlueComposure())
             plate = answers.get('plate')
@@ -158,6 +173,20 @@ class Application:
         if len(obs) == 0:
             return ''
         return f'\n(Obs {break_text_lines(obs,10)})'
+        
+    def question_delivery_fee(self):
+        questions = [
+            inquirer.Confirm("delivery_fee", message="Esse pedido terá taxa de entrega?", default=True)
+        ]
+        
+        answer = inquirer.prompt(questions)
+        if not answer.get('delivery_fee'):
+            return
+        questions = [
+            inquirer.Text("delivery_fee", message="Qual o valor da taxa de entrega?")
+        ]
+        answer = inquirer.prompt(questions)
+        self.delivery_fee = float(answer.get('delivery_fee').replace(',','.'))
 
     def prepare_order(self):
         """Prepare the order for whatsapp and printer"""
@@ -180,6 +209,12 @@ class Application:
             total += float(request.get("sum_value"))
             whatsapp_tabulate_data.append([whatsapp_formatted_name, quantity,value])
             printer_tabulate_data.append([printer_formatted_name, quantity, value])
+        if (self.delivery_fee != 0):
+            total += self.delivery_fee
+            delivery_fee_brl = locale.currency(self.delivery_fee)   
+            taxa_entrega = break_text_lines("Taxa Entrega", 10)
+            whatsapp_tabulate_data.append([taxa_entrega, '-'*5, delivery_fee_brl])
+            printer_tabulate_data.append([taxa_entrega, '-'*5, delivery_fee_brl])
         total = float(f"{total:.2f}")
         value_brl = locale.currency(total)
         whatsapp_tabulate_data.append(['-'*5,'-'*5,'-'*5])
@@ -216,15 +251,16 @@ class Application:
                     self.menu_question()
                     self.plate_and_quantity_questions()
                     question = [
-                        inquirer.Confirm("continue", message="Gostaria de adicionar pratos de outros cardápios", default=False)
+                        inquirer.Confirm("continue", message="Gostaria de adicionar itens de outros cardápios", default=False)
                     ]
                     answer = inquirer.prompt(question,theme=GreenPassion())
                     if not answer.get('continue'):
                         break
+                self.question_delivery_fee()
                 self.prepare_order()
                 self.show_order_overview()
                 question = [
-                    inquirer.Confirm("should_end", message="Deseja finalizar? ", default=True)
+                    inquirer.Confirm("should_end", message="Deseja terminar o pedido (y) ou recomeçar(n) ? ", default=True)
                 ]             
                 answer= inquirer.prompt(question,theme=GreenPassion())
                 if not answer.get("should_end"):

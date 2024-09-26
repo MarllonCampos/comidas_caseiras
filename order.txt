@@ -1,11 +1,16 @@
-Nome do cliente: Mar
+Nome do cliente: Marllon
 Resumo do Pedido:
 --------------------------------
-Nome       Qtd     Vl Unt.
-Frango     1x     R$ 19,00
-Grelhado
----        ---         ---
-Total      ---    R$ 19,00
+Nome            Qtd     Vl Unt.
+Frango A        2x     R$ 19,00
+Milanesa
+Calabresa       2x     R$ 19,00
+Acebolada
+Itubaina Lata   1x      R$ 5,50
+350ml
+Taxa           -----    R$ 6,70
+Entrega
+Total           ---    R$ 88,20
 
 
 
