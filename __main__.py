@@ -1,28 +1,22 @@
 import inquirer, csv
 import locale, pyperclip
 from tabulate import tabulate
-from typing import Dict, List
-from enum import Enum
 from inquirer import errors
 from inquirer.themes import BlueComposure,GreenPassion
-from util import clear_terminal, break_text_lines
+from src.util import clear_terminal, break_text_lines
 from printer import send_to_printer
-from menus import Menus
+from src.menus import Menus
 
-class Menus_Type(Enum):
-    CLASSIC = "Clássico"
-    SPECIAL = "Especial"
-    NOT_SELECTED = None
     
 class Application:
     DEFAULT_CLASSIC_MENU_PATH = 'src/cardapios/classic.csv'
     DEFAULT_SPECIAL_MENU_PATH = 'src/cardapios/special.csv'
     def __init__(self):
         locale.setlocale(locale.LC_ALL, '')
-        self.requests: List(Dict[str, str | int]) = []
+        self.requests = []
         self.client_name: str = ""
-        self.selected_menu: Menus_Type = Menus_Type.CLASSIC 
-        self.menu: List(Dict[str, str]) = {}
+        self.selected_menu = ""
+        self.menu = {}
         self.menus: Menus = Menus()
         self.should_ask_for_different_menus = True
         self.order = ""
@@ -117,7 +111,7 @@ class Application:
 
     def clear_fields(self):
         self.client_name = ""
-        self.selected_menu = Menus_Type.NOT_SELECTED
+        self.selected_menu = None
         self.requests = []
         self.whatsapp_order = ""
         self.printer_order = ""
@@ -202,16 +196,16 @@ class Application:
             whatsapp_formatted_name = f"{name}{self.__format_obs(obs)}"
             whatsapp_formatted_name = break_text_lines(whatsapp_formatted_name, 10)
             printer_formatted_name = f"{name:<12}{self.__format_obs(obs)}"
-
             printer_formatted_name = break_text_lines(printer_formatted_name, 13)
             value = locale.currency(request.get("value"))
             quantity = f'{request.get("quantity")}x'
             total += float(request.get("sum_value"))
             whatsapp_tabulate_data.append([whatsapp_formatted_name, quantity,value])
             printer_tabulate_data.append([printer_formatted_name, quantity, value])
+            printer_tabulate_data.append([None,None,None])
         if (self.delivery_fee != 0):
             total += self.delivery_fee
-            delivery_fee_brl = locale.currency(self.delivery_fee)   
+            delivery_fee_brl = locale.currency(self.delivery_fee)
             taxa_entrega = break_text_lines("Taxa Entrega", 10)
             whatsapp_tabulate_data.append([taxa_entrega, '-'*5, delivery_fee_brl])
             printer_tabulate_data.append([taxa_entrega, '-'*5, delivery_fee_brl])
@@ -222,7 +216,7 @@ class Application:
         whatsapp_tabulate_data.append(["Total","-"*5,value_brl])
         printer_tabulate_data.append(["Total","---",value_brl])
         whatsapp_table = tabulate(whatsapp_tabulate_data,headers=['Nome','Qtd','Vl Unt.'], colalign=('left', 'center','right'), tablefmt="grid",)
-        printer_table = tabulate(printer_tabulate_data,headers=['Nome','Qtd','Vl Unt.'], colalign=('left', 'center','right'), tablefmt="plain")
+        printer_table = tabulate(printer_tabulate_data,headers=['Nome','Qtd','Vl Unt.'], colalign=('left', 'center','right'), tablefmt="grid")
         whatsapp_order+=f"{whatsapp_table}\n"
         printer_order+=f"{printer_table}\n"
         
@@ -278,6 +272,7 @@ class Application:
                 answer = inquirer.prompt(question)
                 if answer.get('continue'):
                     clear_terminal()
+                    self.clear_fields()
                     continue
                 else:
                     break

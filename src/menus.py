@@ -2,6 +2,7 @@ from os import walk, path
 from pprint import pprint
 import csv
 class Menus:
+  """Classe de load de cardápios dentro da pasta SRC/CARDAPIOS"""
   MENUS_PATH = path.join("src","cardapios")
   def __init__(self):
     self.menu_object = {}
@@ -18,9 +19,7 @@ class Menus:
         for idx,line in enumerate(csv_object):
           if idx == 0:
             continue
-          pprint(len(line))
           if len(line) == 0:
-            print(len(line),line)
             continue
           key = line[0]
           plate_name = line[1]
