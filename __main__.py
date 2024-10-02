@@ -1,3 +1,4 @@
+from datetime import datetime
 import inquirer, csv
 import locale, pyperclip
 from tabulate import tabulate
@@ -6,6 +7,7 @@ from inquirer.themes import BlueComposure,GreenPassion
 from src.util import clear_terminal, break_text_lines
 from printer import send_to_printer
 from src.menus import Menus
+tabulate.PRESERVE_WHITESPACE = True
 
     
 class Application:
@@ -118,6 +120,7 @@ class Application:
         self.order = ""
         self.menu = {}
         self.delivery_fee = 0
+        self.should_ask_for_different_menus = True
 
 
     def plate_and_quantity_questions(self):
@@ -184,39 +187,42 @@ class Application:
 
     def prepare_order(self):
         """Prepare the order for whatsapp and printer"""
-        order = f"Nome do cliente: *{self.client_name}*\nResumo do Pedido:\n{"-"*32}\n"
+        order = f"Nome do cliente: *{self.client_name}*\n"
         whatsapp_tabulate_data = []
         printer_tabulate_data = []
         total = 0
         printer_order=f"{order.replace('*','')}"
-        whatsapp_order = f"{order}```"
+        current_time = datetime.now().strftime('%H:%M:%S %p')
+        printer_order+=f"Horário Do Pedido: {current_time}\n"
+        printer_order+=f"Resumo do Pedido:\n{'-'*32}\n"
+        whatsapp_order = f"{order}"
+        whatsapp_order+=f"Resumo do Pedido:\n{'-'*32}\n```"
         for request in self.requests:
             name = request.get("name").strip()
             obs = request.get("obs").strip()
-            whatsapp_formatted_name = f"{name}{self.__format_obs(obs)}"
-            whatsapp_formatted_name = break_text_lines(whatsapp_formatted_name, 10)
-            printer_formatted_name = f"{name:<12}{self.__format_obs(obs)}"
-            printer_formatted_name = break_text_lines(printer_formatted_name, 13)
+            formatted_name = f"{name}{obs}"
             value = locale.currency(request.get("value"))
             quantity = f'{request.get("quantity")}x'
             total += float(request.get("sum_value"))
-            whatsapp_tabulate_data.append([whatsapp_formatted_name, quantity,value])
-            printer_tabulate_data.append([printer_formatted_name, quantity, value])
-            printer_tabulate_data.append([None,None,None])
+            data_to_append = [formatted_name, quantity,value]
+            whatsapp_tabulate_data.append(data_to_append)
+            printer_tabulate_data.append(data_to_append)
+            printer_tabulate_data.append(["                ","                    ","                "])
         if (self.delivery_fee != 0):
             total += self.delivery_fee
             delivery_fee_brl = locale.currency(self.delivery_fee)
-            taxa_entrega = break_text_lines("Taxa Entrega", 10)
-            whatsapp_tabulate_data.append([taxa_entrega, '-'*5, delivery_fee_brl])
-            printer_tabulate_data.append([taxa_entrega, '-'*5, delivery_fee_brl])
+            delivery_fee = "Tx. Entrega"
+            delivery_fee_data = [delivery_fee, '-'*5, delivery_fee_brl]
+            whatsapp_tabulate_data.append(delivery_fee_data)
+            printer_tabulate_data.append(delivery_fee_data)
         total = float(f"{total:.2f}")
         value_brl = locale.currency(total)
         whatsapp_tabulate_data.append(['-'*5,'-'*5,'-'*5])
         printer_tabulate_data.append(['-'*3,'-'*3,'-'*3])
         whatsapp_tabulate_data.append(["Total","-"*5,value_brl])
         printer_tabulate_data.append(["Total","---",value_brl])
-        whatsapp_table = tabulate(whatsapp_tabulate_data,headers=['Nome','Qtd','Vl Unt.'], colalign=('left', 'center','right'), tablefmt="grid",)
-        printer_table = tabulate(printer_tabulate_data,headers=['Nome','Qtd','Vl Unt.'], colalign=('left', 'center','right'), tablefmt="grid")
+        whatsapp_table = tabulate(whatsapp_tabulate_data,headers=['Nome','Qtd','Vl Unt.'], colalign=('left', 'center','right'), tablefmt="grid", maxcolwidths=[10,10,10],disable_numparse=True)
+        printer_table = tabulate(printer_tabulate_data,headers=['Nome','Qtd','Vl Unt.'], colalign=('left', 'center','right'), tablefmt="grid", maxcolwidths=[13,13,13], missingval="")
         whatsapp_order+=f"{whatsapp_table}\n"
         printer_order+=f"{printer_table}\n"
         
