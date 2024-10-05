@@ -200,14 +200,16 @@ class Application:
         for request in self.requests:
             name = request.get("name").strip()
             obs = request.get("obs").strip()
-            formatted_name = f"{name}{obs}"
+            whatsapp_formatted_name = f"{name}{self.__format_obs(obs)}"
+            whatsapp_formatted_name = break_text_lines(whatsapp_formatted_name, 10)
+            printer_formatted_name = f"{name:<12}{self.__format_obs(obs)}"
+            printer_formatted_name = break_text_lines(printer_formatted_name, 13)
             value = locale.currency(request.get("value"))
             quantity = f'{request.get("quantity")}x'
             total += float(request.get("sum_value"))
-            data_to_append = [formatted_name, quantity,value]
-            whatsapp_tabulate_data.append(data_to_append)
-            printer_tabulate_data.append(data_to_append)
-            printer_tabulate_data.append(["                ","                    ","                "])
+            whatsapp_tabulate_data.append([whatsapp_formatted_name, quantity,value])
+            printer_tabulate_data.append([printer_formatted_name, quantity, value])
+            printer_tabulate_data.append(["   ","   ","   "])
         if (self.delivery_fee != 0):
             total += self.delivery_fee
             delivery_fee_brl = locale.currency(self.delivery_fee)
@@ -236,7 +238,7 @@ class Application:
         printer_file = open("./order.txt","w", encoding="utf8")
         printer_file.write(self.printer_order)
         printer_file.close()
-        send_to_printer() # CALLS UTILS FILE TO PRINT ORDER
+        send_to_printer() # CALLS UTILS FILpE TO PRINT ORDER
 
     
     def show_order_overview(self):
